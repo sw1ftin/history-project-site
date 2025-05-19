@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Атомный проект: СССР & США</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@600&family=Share+Tech+Mono&display=swap");
+
+        :root {
+            --bg-dark:   #0a0d11;
+            --bg-mid:    #1f2937;
+            --accent:    #e0ff4f;
+            --card-bg:   #11191f;
+            --text:      #d1d5db;
+            --dur:       0.5s;
+        }
+
+        /* Сброс и базовые стили */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+            font-family: Inter, sans-serif;
+            background: radial-gradient(circle at top, var(--bg-mid), var(--bg-dark));
+            color: var(--text);
+        }
+        body { display: flex; flex-direction: column }
+
+        /* Шапка */
+        header {
+            padding: 2rem 1rem 1rem;
+            text-align: center;
+            z-index: 10;
+        }
+        header h1 {
+            font-size: clamp(2.2rem, 6vw, 3.8rem);
+            color: var(--accent);
+            text-shadow: 0 0 .3rem rgba(224,255,79,.7);
+            display: inline-flex; align-items: center; gap: .4rem;
+        }
+        header h1::before, header h1::after {
+            content: "☢"; font-size: .6em; opacity: .8;
+            animation: flick 3s infinite steps(2);
+        }
+        @keyframes flick {
+            0%,44%,46%,100% { opacity: .8 }
+            45%            { opacity: .3 }
+        }
+        header p {
+            margin-top: .5rem;
+            font-size: 1.1rem;
+            opacity: .85;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Стрелки */
+        .arrow {
+            position: fixed; top: 50%; transform: translateY(-50%);
+            width: 3rem; height: 3rem; font-size: 1.8rem;
+            border: none; border-radius: 50%;
+            background: rgba(32,38,46,.8); color: var(--text);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 20; backdrop-filter: blur(6px);
+            transition: background .2s, transform .2s, opacity .3s;
+        }
+        .arrow:hover {
+            background: rgba(224,255,79,.25);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .arrow.left  { left: 1rem }
+        .arrow.right { right: 1rem }
+        .arrow.hidden { opacity: 0; pointer-events: none }
+        @media(max-width:640px){ .arrow{display:none} }
+
+        /* Слайдер */
+        .slider {
+            flex: 1; display: flex;
+            overflow-x: auto; overflow-y: visible;
+            scroll-snap-type: x mandatory; scrollbar-width: none;
+            position: relative;
+        }
+        .slider::-webkit-scrollbar { display: none }
+
+        .event-container {
+            flex: 0 0 100vw; scroll-snap-align: center;
+            display: flex; justify-content: center; align-items: flex-start;
+            padding: 2rem 0; overflow: visible;
+        }
+
+        /* Карточка */
+        .card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            width: 90vw;
+            max-width: 1000px;
+            box-shadow: 0 8px 16px rgba(0,0,0,.5);
+            opacity: 0;
+            transform: scaleY(1);
+            transform-origin: top center; /* раскрытие вниз */
+            transition:
+                    transform var(--dur) ease,
+                    opacity   var(--dur) ease,
+                    box-shadow .3s ease;
+            cursor: pointer;
+            position: relative; z-index: 1;
+        }
+        .card.show { opacity: 1 }
+        .card:hover:not(.active):not(.dim) {
+            transform: scaleY(1.02);
+        }
+        .card.dim {
+            opacity: .4; filter: grayscale(.6) brightness(.7);
+            pointer-events: none;
+        }
+        .card.active {
+            transform: scaleY(1.2);
+            z-index: 5;
+            box-shadow: 0 16px 30px rgba(0,0,0,.7), 0 0 .8rem rgba(224,255,79,.3);
+        }
+
+        .card img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 1rem 1rem 0 0;
+            transition: max-height var(--dur) ease, object-fit var(--dur) ease;
+        }
+        .card.active img {
+            max-height: 50vh;
+            object-fit: contain;
+        }
+
+        .card-content {
+            padding: 1rem 1.2rem 1.4rem;
+        }
+        .card h3 {
+            font-size: 1.4rem; color: var(--accent); margin-bottom: .5rem;
+        }
+        .card h4 {
+            font-size: 1.1rem; opacity: .9; margin-bottom: .5rem;
+        }
+        .card p.subtitle {
+            font-size: .95rem; opacity: .75; margin-bottom: .8rem;
+        }
+        .card p.desc {
+            font-size: 1rem; line-height: 1.6;
+            max-height: 0; overflow: hidden; opacity: 0;
+            transition: max-height .5s ease, opacity .5s ease;
+        }
+        .card.active p.desc {
+            max-height: 800px; opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Атомный проект</h1>
+    <p>
+        Добро пожаловать в интерактивный путеводитель по ключевым событиям атомного проекта США и СССР:
+        от первых исследований деления ядра до подписания договоров о контроле над испытаниями.
+        Листайте стрелками или свайпайте — погрузитесь в историю атомной эры.
+    </p>
+</header>
+
+<button class="arrow left"  id="prev">‹</button>
+<button class="arrow right" id="next">›</button>
+
+<div class="slider" id="slider"></div>
+
+<script>
+    const events = [
+        {
+            year: "1938",
+            title: "Открытие деления ядра",
+            subtitle: "Ган и Штрассман",
+            img: "https://upload.wikimedia.org/wikipedia/commons/1/15/Nuclear_fission.svg",
+            desc: `
+          В 1938 году Отто Ган и Фриц Штрассман в Берлине обнаружили продукты деления ядра урана.
+          Лизе Мейтнер и Отто Фриш объяснили механизм, продемонстрировав высвобождение огромной энергии.<br><br>
+          Открытие стало основой для первых ядерных реакторов и оружия, запустив гонку вооружений
+          и исследования в СССР и США, изменив мировую историю.`
+        },
+        {
+            year: "2 дек 1942",
+            title: "Chicago Pile-1",
+            subtitle: "Первый реактор • США",
+            img: "https://upload.wikimedia.org/wikipedia/commons/f/fe/Stagg_Field_reactor.jpg",
+            desc: `
+          Под трибунами стадиона «Стэгг-Филд» Энрико Ферми запустил Chicago Pile-1 – первый управляемый ядерный реактор.
+          Цепная реакция длилась 28 минут, доказав практическую возможность производства плутония.<br><br>
+          Эксперимент открыл путь к промышленным реакторам и стал ключевым этапом проекта «Манхэттен»,
+          заложив фундамент для атомной энергетики и оружия.`
+        },
+        {
+            year: "16 июл 1945",
+            title: "Trinity",
+            subtitle: "Первый ядерный взрыв • США",
+            img: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Trinity_Test_Mushroom_Cloud_12s.jpg",
+            desc: `
+          На полигоне в Нью-Мексико испытали плутониевый заряд «Gadget» (~21 кг ТНТ). «Теперь я — смерть, разрушитель миров» —
+          процитировал Оппенгеймер.<br><br>
+          Trinity завершил экспериментальную фазу Манхэттена и открыл эру ядерных взрывов,
+          спровоцировав гонку вооружений между сверхдержавами.`
+        },
+        {
+            year: "6 авг 1945",
+            title: "Хиросима",
+            subtitle: "«Little Boy» • США",
+            img: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Atomic_cloud_over_Hiroshima.jpg",
+            desc: `
+          Урановая бомба «Little Boy» (~15 кг ТНТ) уничтожила Хиросиму, мгновенно убив десятки тысяч.
+          Радиоактивные осадки продолжались годами.<br><br>
+          Первый боевой ядерный удар стал трагическим прецедентом, изменив концепцию войны
+          и международных отношений навсегда.`
+        },
+        {
+            year: "9 авг 1945",
+            title: "Нагасаки",
+            subtitle: "«Fat Man» • США",
+            img: "https://upload.wikimedia.org/wikipedia/commons/e/e0/Nagasakibomb.jpg",
+            desc: `
+          Плутониевая бомба «Fat Man» (~21 кг ТНТ) поразила Нагасаки через 3 дня после Хиросимы,
+          ускорив окончание Второй мировой войны.<br><br>
+          Масштаб разрушений подчеркнул ужасающую мощь нового оружия и поднял вопрос о его контроле.`
+        },
+        {
+            year: "29 авг 1949",
+            title: "РДС-1 «Джо-1»",
+            subtitle: "Первая советская бомба",
+            img: "https://upload.wikimedia.org/wikipedia/en/e/e8/Joe_one.jpg",
+            desc: `
+          СССР испытал первую плутониевую бомбу (22 кг ТНТ) на Семипалатинском полигоне,
+          завершив американскую монополию на ядерное оружие.<br><br>
+          «Джо-1» стал отправной точкой советской программы термоядерного оружия
+          и усилил международное соперничество.`
+        },
+        {
+            year: "1 ноя 1952",
+            title: "Ivy Mike",
+            subtitle: "Первая водородная • США",
+            img: "https://upload.wikimedia.org/wikipedia/commons/4/4a/%22Ivy_Mike%22_atmospheric_nuclear_test_-_November_1952_-_Flickr_-_The_Official_CTBTO_Photostream.jpg",
+            desc: `
+          Испытание «Ivy Mike» (10,4 Мт) показало огромную мощь термоядерного заряда,
+          испарив атолл Эниветок.<br><br>
+          Успех стимулировал разработки ТЯО в СССР и США, задав новый уровень гонки вооружений.`
+        },
+        {
+            year: "12 авг 1953",
+            title: "РДС-6с «Джо-4»",
+            subtitle: "Первая ТЯО СССР",
+            img: "https://webpulse.imgsmail.ru/imgpreview?mb=webpulse&key=pulse_cabinet-image-d638d9f0-f79f-4121-9015-75129e5a4399&fu=1&kr=1&h=356&w=630",
+            desc: `
+          Советская термоядерная «слойка» (400 кТ) без криогенов подтвердила эффективность схемы Сахарова.<br><br>
+          Испытание укрепило технологический паритет и усилило переговоры о запрете ядерных испытаний.`
+        },
+        {
+            year: "30 окт 1961",
+            title: "Царь-бомба",
+            subtitle: "50 Мт • СССР",
+            img: "https://upload.wikimedia.org/wikipedia/commons/9/98/The_tsar_bomba_test.jpg",
+            desc: `
+          Царь-бомба (~50 Мт) — самая мощная в истории — подняла гриб на 64 км,
+          ударная волна трижды обогнула Землю.<br><br>
+          Испытание стало демонстрацией силы и символом холодной войны.`
+        },
+        {
+            year: "5 авг 1963",
+            title: "Договор о частичном запрете испытаний",
+            subtitle: "СССР • США • Великобритания",
+            img: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Signing_of_the_Nuclear_Test_Ban_Treaty_-_NARA_-_194230.jpg",
+            desc: `
+          Договор запретил испытания в атмосфере, космосе и под водой,
+          сократив радиоактивное загрязнение.<br><br>
+          Подписали СССР, США и Великобритания — первый шаг
+          к международному контролю над ядерными арсеналами.`
+        }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const slider = document.getElementById('slider');
+
+        events.forEach(ev => {
+            const container = document.createElement('div');
+            container.className = 'event-container';
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+          <img src="${ev.img}" alt="">
+          <div class="card-content">
+            <h3>${ev.year}</h3>
+            <h4>${ev.title}</h4>
+            <p class="subtitle">${ev.subtitle}</p>
+            <p class="desc">${ev.desc}</p>
+          </div>`;
+            container.appendChild(card);
+            slider.appendChild(container);
+
+            card.addEventListener('click', () => {
+                const was = card.classList.contains('active');
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('active','dim'));
+                if (!was) {
+                    card.classList.add('active');
+                    document.querySelectorAll('.card:not(.active)').forEach(c => c.classList.add('dim'));
+                }
+            });
+        });
+
+        // Появление карточек при скролле
+        const io = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.querySelector('.card').classList.add('show');
+                    io.unobserve(e.target);
+                }
+            });
+        }, { threshold: .2 });
+        document.querySelectorAll('.event-container').forEach(c => io.observe(c));
+
+        // Стрелки перелистывания
+        const prev = document.getElementById('prev'),
+            next = document.getElementById('next');
+        const step = window.innerWidth;
+        prev.onclick = () => slider.scrollBy({ left: -step, behavior: 'smooth' });
+        next.onclick = () => slider.scrollBy({ left:  step, behavior: 'smooth' });
+        function updateArrows() {
+            const max = slider.scrollWidth - slider.clientWidth - 1;
+            prev.classList.toggle('hidden', slider.scrollLeft <= 0);
+            next.classList.toggle('hidden', slider.scrollLeft >= max);
+        }
+        slider.addEventListener('scroll', updateArrows);
+        window.addEventListener('resize', updateArrows);
+        updateArrows();
+    });
+</script>
+</body>
+</html>
